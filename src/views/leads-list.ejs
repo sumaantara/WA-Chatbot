@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Leads — <%= businessName %> Dashboard</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><%= businessName %> — Leads Dashboard</div>
+    <form method="post" action="/logout"><button type="submit">Logout</button></form>
+  </div>
+  <div class="container">
+    <h1>Leads dari WhatsApp bot</h1>
+    <p class="muted">Data diambil langsung dari Insightly setiap halaman ini dibuka (data selalu real-time, tidak disalin ke tempat lain).</p>
+
+    <% if (error) { %>
+      <div class="card"><p class="error-text"><%= error %></p></div>
+    <% } else { %>
+      <form class="search-row" method="get" action="/">
+        <input type="text" name="q" placeholder="Cari nama / email / nomor WA / kategori visa..." value="<%= q %>" />
+        <button class="btn" type="submit">Cari</button>
+        <a class="btn secondary" href="/?refresh=1" style="text-decoration:none; display:flex; align-items:center;">Refresh</a>
+      </form>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Kontak</th>
+              <th>Kategori Visa</th>
+              <th>Dibuat</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (leads.length === 0) { %>
+              <tr><td colspan="5" class="muted">Belum ada leads<% if (q) { %> yang cocok dengan pencarian<% } %>.</td></tr>
+            <% } %>
+            <% leads.forEach(function(l) { %>
+              <tr>
+                <td><a href="/leads/<%= l.LEAD_ID %>"><%= [l.FIRST_NAME, l.LAST_NAME].filter(Boolean).join(' ') || '(tanpa nama)' %></a></td>
+                <td>
+                  <div><%= l.EMAIL || '-' %></div>
+                  <div class="muted"><%= l.PHONE || '-' %></div>
+                </td>
+                <td><% if (l._visa) { %><span class="badge visa"><%= l._visa %></span><% } else { %><span class="muted">-</span><% } %></td>
+                <td class="muted"><%= l.DATE_CREATED_UTC ? new Date(l.DATE_CREATED_UTC + 'Z').toLocaleString('id-ID') : '-' %></td>
+                <td><a href="/leads/<%= l.LEAD_ID %>">Lihat &rarr;</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</body>
+</html>

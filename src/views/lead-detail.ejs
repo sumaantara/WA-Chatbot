@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= [lead.FIRST_NAME, lead.LAST_NAME].filter(Boolean).join(' ') || 'Lead' %> — <%= businessName %> Dashboard</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><%= businessName %> — Leads Dashboard</div>
+    <form method="post" action="/logout"><button type="submit">Logout</button></form>
+  </div>
+  <div class="container">
+    <p><a href="/">&larr; Kembali ke daftar leads</a></p>
+
+    <% if (saved === 'meeting') { %><div class="card"><p style="color:var(--accent-2);">Meeting summary tersimpan.</p></div><% } %>
+    <% if (saved === 'loa') { %><div class="card"><p style="color:var(--accent-2);">LOA tersimpan.</p></div><% } %>
+    <% if (saved === 'deleted') { %><div class="card"><p class="muted">Data sudah dihapus.</p></div><% } %>
+    <% if (saved === 'error-empty') { %><div class="card"><p class="error-text">Isian tidak boleh kosong.</p></div><% } %>
+
+    <div class="card">
+      <h1><%= [lead.FIRST_NAME, lead.LAST_NAME].filter(Boolean).join(' ') || '(tanpa nama)' %></h1>
+      <div class="grid-2">
+        <div>
+          <p><strong>Email:</strong> <%= lead.EMAIL || '-' %></p>
+          <p><strong>Telepon/WA:</strong> <%= lead.PHONE || lead.MOBILE || '-' %></p>
+          <p><strong>Kategori visa:</strong> <% if (visaCategory) { %><span class="badge visa"><%= visaCategory %></span><% } else { %>-<% } %></p>
+        </div>
+        <div>
+          <p><strong>Dibuat:</strong> <%= lead.DATE_CREATED_UTC ? new Date(lead.DATE_CREATED_UTC + 'Z').toLocaleString('id-ID') : '-' %></p>
+          <p><strong>Insightly Lead ID:</strong> <%= lead.LEAD_ID %></p>
+        </div>
+      </div>
+      <h3 style="margin-top:16px;">Ringkasan diskusi (dari bot WhatsApp)</h3>
+      <div class="description-box"><%= summaryBody || '(tidak ada ringkasan)' %></div>
+    </div>
+
+    <% if (dbError) { %>
+      <div class="card"><p class="error-text"><%= dbError %></p></div>
+    <% } else { %>
+
+    <div class="card">
+      <h2>Meeting Summary (konsultasi via website)</h2>
+      <p class="muted">Dicatat manual oleh konsultan setelah sesi konsultasi.</p>
+
+      <% meetingSummaries.forEach(function(m) { %>
+        <div class="entry">
+          <div class="meta">
+            <%= m.meeting_date ? new Date(m.meeting_date).toLocaleDateString('id-ID') : 'Tanggal tidak diisi' %>
+            <% if (m.consultant_name) { %> &middot; Konsultan: <%= m.consultant_name %><% } %>
+            &middot; dicatat <%= new Date(m.created_at).toLocaleString('id-ID') %>
+          </div>
+          <pre><%= m.summary %></pre>
+          <div class="actions">
+            <form method="post" action="/leads/<%= lead.LEAD_ID %>/meeting-summary/<%= m.id %>/delete" onsubmit="return confirm('Hapus meeting summary ini?');">
+              <button class="btn danger" type="submit">Hapus</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+      <% if (meetingSummaries.length === 0) { %><p class="muted">Belum ada meeting summary untuk lead ini.</p><% } %>
+
+      <h3 style="margin-top:18px;">Tambah meeting summary</h3>
+      <form method="post" action="/leads/<%= lead.LEAD_ID %>/meeting-summary">
+        <input type="hidden" name="lead_name" value="<%= [lead.FIRST_NAME, lead.LAST_NAME].filter(Boolean).join(' ') %>" />
+        <input type="hidden" name="lead_email" value="<%= lead.EMAIL || '' %>" />
+        <div class="grid-2">
+          <div>
+            <label>Tanggal meeting</label>
+            <input type="date" name="meeting_date" />
+          </div>
+          <div>
+            <label>Nama konsultan</label>
+            <input type="text" name="consultant_name" placeholder="mis. Jane Doe" />
+          </div>
+        </div>
+        <label>Ringkasan meeting</label>
+        <textarea name="summary" placeholder="Hasil diskusi, keputusan, next step, dsb." required></textarea>
+        <div style="margin-top:10px;">
+          <button class="btn" type="submit">Simpan meeting summary</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>LOA (Letter of Offer / Advice)</h2>
+      <p class="muted">Untuk sekarang ditempel manual (teks atau link) dari tool LOA generator tim lain. Bisa disambungkan otomatis nanti kalau tool itu sudah punya API/export.</p>
+
+      <% loaDocuments.forEach(function(d) { %>
+        <div class="entry">
+          <div class="meta">
+            <%= d.kind === 'link' ? 'Link dokumen' : 'Teks LOA' %>
+            <% if (d.title) { %> &middot; <%= d.title %><% } %>
+            &middot; ditambahkan <%= new Date(d.created_at).toLocaleString('id-ID') %>
+          </div>
+          <% if (d.kind === 'link') { %>
+            <p><a href="<%= d.link_url %>" target="_blank" rel="noopener">Buka dokumen &rarr;</a></p>
+          <% } else { %>
+            <pre><%= d.content %></pre>
+          <% } %>
+          <div class="actions">
+            <form method="post" action="/leads/<%= lead.LEAD_ID %>/loa/<%= d.id %>/delete" onsubmit="return confirm('Hapus LOA ini?');">
+              <button class="btn danger" type="submit">Hapus</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+      <% if (loaDocuments.length === 0) { %><p class="muted">Belum ada LOA untuk lead ini.</p><% } %>
+
+      <h3 style="margin-top:18px;">Tambah LOA</h3>
+      <form method="post" action="/leads/<%= lead.LEAD_ID %>/loa" id="loaForm">
+        <input type="hidden" name="lead_name" value="<%= [lead.FIRST_NAME, lead.LAST_NAME].filter(Boolean).join(' ') %>" />
+        <input type="hidden" name="lead_email" value="<%= lead.EMAIL || '' %>" />
+        <label>Judul (opsional)</label>
+        <input type="text" name="title" placeholder="mis. LOA - Skilled Migration 189" />
+        <label>Tipe</label>
+        <select name="kind" onchange="document.getElementById('loa-text-field').style.display = this.value === 'text' ? 'block' : 'none'; document.getElementById('loa-link-field').style.display = this.value === 'link' ? 'block' : 'none';">
+          <option value="link">Link ke dokumen (Google Doc / Claude artifact / PDF, dll)</option>
+          <option value="text">Tempel teks LOA langsung</option>
+        </select>
+        <div id="loa-link-field">
+          <label>Link dokumen</label>
+          <input type="text" name="link_url" placeholder="https://..." />
+        </div>
+        <div id="loa-text-field" style="display:none;">
+          <label>Isi LOA</label>
+          <textarea name="content" placeholder="Tempel isi LOA di sini"></textarea>
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn" type="submit">Simpan LOA</button>
+        </div>
+      </form>
+    </div>
+
+    <% } %>
+  </div>
+</body>
+</html>
