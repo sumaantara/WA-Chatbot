@@ -2,18 +2,16 @@
 -- di Insightly (Meeting Summary & LOA) -- data Lead sendiri selalu diambil
 -- langsung dari Insightly API, tidak diduplikasi di sini.
 --
--- SEMUA tabel di schema `oneland_dashboard` TERPISAH (BUKAN `public`) --
--- project Supabase ini (HRM) dipakai bersama aplikasi lain (ada schema
--- `hrm` sendiri di project yang sama), jadi schema terpisah ini supaya
--- tabel dashboard leads TIDAK bentrok/tercampur dengan data HRM.
+-- Project Supabase ini ("Chatbot", organisasi "Wanderlen") DIBUAT KHUSUS
+-- untuk dashboard ini, tidak dipakai aplikasi lain -- jadi tabel langsung
+-- di schema `public`, tidak perlu schema terpisah (beda dengan percobaan
+-- awal yang sempat numpang di project Supabase "HRM" milik aplikasi lain).
 --
 -- Dikaitkan ke Lead Insightly lewat insightly_lead_id (angka LEAD_ID dari
 -- Insightly). email ikut disimpan sebagai cadangan tampilan/pencarian kalau
 -- suatu saat Lead itu sudah di-convert/dihapus dari Insightly.
 
-CREATE SCHEMA IF NOT EXISTS oneland_dashboard;
-
-CREATE TABLE IF NOT EXISTS oneland_dashboard.meeting_summaries (
+CREATE TABLE IF NOT EXISTS meeting_summaries (
   id SERIAL PRIMARY KEY,
   insightly_lead_id BIGINT NOT NULL,
   lead_name TEXT,
@@ -26,9 +24,9 @@ CREATE TABLE IF NOT EXISTS oneland_dashboard.meeting_summaries (
 );
 
 CREATE INDEX IF NOT EXISTS idx_meeting_summaries_lead_id
-  ON oneland_dashboard.meeting_summaries (insightly_lead_id);
+  ON meeting_summaries (insightly_lead_id);
 
-CREATE TABLE IF NOT EXISTS oneland_dashboard.loa_documents (
+CREATE TABLE IF NOT EXISTS loa_documents (
   id SERIAL PRIMARY KEY,
   insightly_lead_id BIGINT NOT NULL,
   lead_name TEXT,
@@ -45,4 +43,4 @@ CREATE TABLE IF NOT EXISTS oneland_dashboard.loa_documents (
 );
 
 CREATE INDEX IF NOT EXISTS idx_loa_documents_lead_id
-  ON oneland_dashboard.loa_documents (insightly_lead_id);
+  ON loa_documents (insightly_lead_id);

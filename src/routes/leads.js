@@ -57,8 +57,8 @@ router.get("/leads/:id", async (req, res, next) => {
     let dbError = null;
     try {
       const [ms, loa] = await Promise.all([
-        query("SELECT * FROM oneland_dashboard.meeting_summaries WHERE insightly_lead_id = $1 ORDER BY meeting_date DESC NULLS LAST, created_at DESC", [leadId]),
-        query("SELECT * FROM oneland_dashboard.loa_documents WHERE insightly_lead_id = $1 ORDER BY created_at DESC", [leadId]),
+        query("SELECT * FROM meeting_summaries WHERE insightly_lead_id = $1 ORDER BY meeting_date DESC NULLS LAST, created_at DESC", [leadId]),
+        query("SELECT * FROM loa_documents WHERE insightly_lead_id = $1 ORDER BY created_at DESC", [leadId]),
       ]);
       meetingSummaries = ms.rows;
       loaDocuments = loa.rows;
@@ -89,7 +89,7 @@ router.post("/leads/:id/meeting-summary", async (req, res, next) => {
       return res.redirect(`/leads/${leadId}?saved=error-empty`);
     }
     await query(
-      `INSERT INTO oneland_dashboard.meeting_summaries (insightly_lead_id, lead_name, lead_email, meeting_date, consultant_name, summary)
+      `INSERT INTO meeting_summaries (insightly_lead_id, lead_name, lead_email, meeting_date, consultant_name, summary)
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [leadId, lead_name || null, lead_email || null, meeting_date || null, consultant_name || null, summary.trim()]
     );
@@ -103,7 +103,7 @@ router.post("/leads/:id/meeting-summary", async (req, res, next) => {
 router.post("/leads/:id/meeting-summary/:summaryId/delete", async (req, res, next) => {
   try {
     const { id: leadId, summaryId } = req.params;
-    await query("DELETE FROM oneland_dashboard.meeting_summaries WHERE id = $1 AND insightly_lead_id = $2", [summaryId, leadId]);
+    await query("DELETE FROM meeting_summaries WHERE id = $1 AND insightly_lead_id = $2", [summaryId, leadId]);
     res.redirect(`/leads/${leadId}?saved=deleted`);
   } catch (err) {
     next(err);
@@ -122,7 +122,7 @@ router.post("/leads/:id/loa", async (req, res, next) => {
       return res.redirect(`/leads/${leadId}?saved=error-empty`);
     }
     await query(
-      `INSERT INTO oneland_dashboard.loa_documents (insightly_lead_id, lead_name, lead_email, kind, content, link_url, title)
+      `INSERT INTO loa_documents (insightly_lead_id, lead_name, lead_email, kind, content, link_url, title)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         leadId,
@@ -144,7 +144,7 @@ router.post("/leads/:id/loa", async (req, res, next) => {
 router.post("/leads/:id/loa/:loaId/delete", async (req, res, next) => {
   try {
     const { id: leadId, loaId } = req.params;
-    await query("DELETE FROM oneland_dashboard.loa_documents WHERE id = $1 AND insightly_lead_id = $2", [loaId, leadId]);
+    await query("DELETE FROM loa_documents WHERE id = $1 AND insightly_lead_id = $2", [loaId, leadId]);
     res.redirect(`/leads/${leadId}?saved=deleted`);
   } catch (err) {
     next(err);
