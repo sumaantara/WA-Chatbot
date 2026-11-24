@@ -1,0 +1,21 @@
+{
+  "name": "oneland-leads-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dashboard internal ONEderland Consulting: leads dari WhatsApp bot (Insightly), meeting summary, dan LOA per client.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:migrate": "node src/lib/migrate.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "connect-pg-simple": "^10.0.0",
+    "ejs": "^3.1.10",
+    "pg": "^8.13.1",
+    "dotenv": "^16.4.7"
+  }
+}
